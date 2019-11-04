@@ -1,4 +1,4 @@
-const mongoose = require('mogoose')
+const mongoose = require('mongoose')
 require('dotenv').config()
 
 const uploadSchema = new mongoose.Schema({

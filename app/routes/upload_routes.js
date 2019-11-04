@@ -2,7 +2,11 @@
 const express = require('express')
 // Passport docs: http://www.passportjs.org/docs/
 const passport = require('passport')
-
+// require multer: https://npmjs.com/package/multer#readme
+const multer = require('multer')
+const storage = multer.memoryStorage()
+const multerUpload = multer({ storage: storage })
+const uploadApi = require('../../lib/uploadApi')
 // pull in Mongoose model for uploads
 const Upload = require('../models/upload')
 
@@ -57,11 +61,16 @@ router.get('/uploads/:id', requireToken, (req, res, next) => {
 
 // CREATE
 // POST /uploads
-router.post('/uploads', requireToken, (req, res, next) => {
-  // set owner of new upload to be current user
-  req.body.upload.owner = req.user.id
-
-  Upload.create(req.body.upload)
+router.post('/uploads', multerUpload.single('file'), requireToken, (req, res, next) => {
+  uploadApi(req.file)
+    .then((awsResponse) => {
+      console.log(awsResponse)
+      return Upload.create({
+        fileName: awsResponse.key,
+        fileType: req.file.mimetype,
+        owner: req.user.id
+      })
+    })
     // respond to succesful `create` with status 201 and JSON of new "upload"
     .then(upload => {
       res.status(201).json({ upload: upload.toObject() })
